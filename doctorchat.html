@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctor Chat</title>
+  <link rel="stylesheet" href="doctorchat.css" />
+</head>
+<body>
+
+  <!-- Logout Button -->
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <div class="chat-container">
+    <h2>Doctor Chat</h2>
+    <div id="chat-box"></div>
+
+    <div class="chat-input-container">
+      <input type="text" id="message-input" placeholder="Type your response...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <!-- Prescription Controls -->
+    <button onclick="markAsPrescription()">Mark Last Message as Prescription</button>
+  </div>
+
+  <script>
+    // Send doctor message
+    function sendMessage() {
+      const input = document.getElementById("message-input");
+      const message = input.value.trim();
+
+      if (message !== "") {
+        const chatBox = document.getElementById("chat-box");
+        const newMessage = `<div class="message doctor">${message}</div>`;
+        chatBox.innerHTML += newMessage;
+
+        // Save chat message locally (optional)
+        const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+        chatHistory.push({ sender: "doctor", text: message });
+        localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+        // Notify user
+        localStorage.setItem("chatMessage", message);
+        input.value = "";
+      }
+    }
+
+    // Receive user message via localStorage sync
+    window.addEventListener("storage", function (event) {
+      if (event.key === "chatMessage") {
+        const chatBox = document.getElementById("chat-box");
+        const newMessage = `<div class="message user">${event.newValue}</div>`;
+        chatBox.innerHTML += newMessage;
+      }
+    });
+
+    // Logout
+    function logout() {
+      window.location.href = "Home.html";
+    }
+
+    // Store prescription to MongoDB
+    async function markAsPrescription() {
+  const messages = document.querySelectorAll(".message.doctor");
+  if (messages.length > 0) {
+    const lastMessage = messages[messages.length - 1].textContent;
+
+    try {
+      const response = await fetch("http://localhost:5001/save-prescription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prescription: lastMessage,
+          doctor: "Dr. Smith"
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("✅ Prescription saved to MongoDB!");
+      } else {
+        alert("❌ Failed: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("❌ Save Error:", err);
+      alert("Server error saving prescription.");
+    }
+  } else {
+    alert("⚠️ No doctor messages found to mark.");
+  }
+}
+  </script>
+
+</body>
+</html>
