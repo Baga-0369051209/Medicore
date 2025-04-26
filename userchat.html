@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Chat</title>
+  <link rel="stylesheet" href="userchat.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    .prescription-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      margin-left: 10px;
+    }
+    .prescription-btn:hover {
+      background-color: #0056b3;
+    }
+    #prescription-section {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f8f9fa;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      display: none; /* Hide since we're navigating to another page */
+    }
+    #prescription-content {
+      white-space: pre-wrap;
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      font-family: monospace;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Logout Button -->
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+  <div class="chat-container">
+    <h2>User Chat</h2>
+    <div id="chat-box"></div>
+    
+    <div class="chat-input-container">
+      <input type="text" id="message-input" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+      <button class="prescription-btn" onclick="goToPrescription()">Get Prescription</button>
+      <button class="prescription-btn" onclick="exportPrescription()">Download PDF</button>
+    </div>
+
+    <!-- Prescription display section (hidden now) -->
+    <div id="prescription-section">
+      <h3>📝 Prescription</h3>
+      <pre id="prescription-content">Loading...</pre>
+    </div>
+  </div>
+
+  <script>
+    // Load prescription from MongoDB on page load
+    window.onload = async function () {
+      try {
+        const res = await fetch("http://localhost:5000/api/prescriptions/latest");
+        const data = await res.json();
+        document.getElementById("prescription-content").textContent =
+          data.message || "No prescription marked yet.";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("prescription-content").textContent =
+          "Error loading prescription.";
+      }
+    };
+
+    // Send user message
+    function sendMessage() {
+      const input = document.getElementById("message-input");
+      const message = input.value.trim();
+      if (message !== "") {
+        const chatBox = document.getElementById("chat-box");
+        const newMessage = `<div class="message user">${message}</div>`;
+        chatBox.innerHTML += newMessage;
+
+        localStorage.setItem("chatMessage", message);
+        input.value = "";
+      }
+    }
+
+    // Listen for doctor replies
+    window.addEventListener("storage", function (event) {
+      if (event.key === "chatMessage") {
+        const message = event.newValue;
+        const chatBox = document.getElementById("chat-box");
+        const newMessage = `<div class="message doctor">${message}</div>`;
+        chatBox.innerHTML += newMessage;
+      }
+    });
+
+    // Redirect to prescription.html
+    function goToPrescription() {
+      window.location.href = "prescription.html";
+    }
+
+    // Export prescription as PDF
+    function exportPrescription() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const content = document.getElementById("prescription-content").textContent;
+
+      doc.text("📝 Prescription", 10, 10);
+      doc.text(content || "No prescription marked yet.", 10, 20);
+      doc.save("prescription.pdf");
+    }
+
+    function logout() {
+      window.location.href = "Home.html";
+    }
+  </script>
+</body>
+</html>

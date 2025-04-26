@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Login</title>
+    <link rel="stylesheet" href="doctorstyle.css">
+</head>
+<body>
+    <div class="login-container">
+        <h2>Doctor Login</h2>
+        <form id="doctorLoginForm">
+            <label for="username">Name:</label>
+            <input type="text" id="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+<br><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("doctorLoginForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent form from submitting
+
+            // Doctor credentials stored in JavaScript
+            const doctors = {
+                "padamapriya": "priya@400",
+                "shanmugasundar": "sundar@405",
+                "naveen": "naveen@410"
+            };
+
+            // Get user input
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            // Check if the entered credentials match
+            if (doctors[username] && doctors[username] === password) {
+                alert("Doctor login successful!");
+                window.location.href = "doctorchat.html"; // Redirect after login
+            } else {
+                alert("Invalid credentials! Please try again.");
+            }
+        });
+    </script>
+</body>
+</html>

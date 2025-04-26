@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prescription</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .prescription-container {
+      max-width: 800px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .hospital-info {
+      font-size: 16px;
+      color: #333;
+    }
+    .hospital-name {
+      font-size: 26px;
+      font-weight: bold;
+      color: #007bff;
+    }
+    .date {
+      font-size: 14px;
+      color: #666;
+      text-align: right;
+    }
+    .user-info {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    .user-info span {
+      font-weight: bold;
+    }
+    .section-title {
+      margin-top: 30px;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      color: #333;
+    }
+    .prescription-content {
+      margin-top: 15px;
+      font-size: 16px;
+      white-space: pre-wrap;
+      background: #fafafa;
+      border: 1px dashed #aaa;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+    }
+    .export-btn {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .export-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="prescription-container" id="prescription-box">
+    <div class="header">
+      <div class="hospital-info">
+        <div class="hospital-name">Bewell Hospital</div>
+        <div>
+          Old No.23/1-7, New No.46/1 & 46/1 A,<br>
+          Near Collectorate Office, K P Road,<br>
+          Ramavarmapuram-629001 (Near Collectorate Office)
+        </div>
+      </div>
+      <div class="date" id="date">Date: ...</div>
+    </div>
+
+    <div class="user-info">
+      <p>Patient Name: <span id="patient-name">Loading...</span></p>
+      <p>Doctor Name: <span id="doctor-name">Loading...</span></p>
+    </div>
+
+    <div class="section-title">Diagnosis & Prescription</div>
+    <div class="prescription-content" id="prescription-content">Fetching prescription...</div>
+
+    <button class="export-btn" onclick="exportPDF()">Export PDF</button>
+  </div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    document.getElementById("date").textContent = "Date: " + new Date().toLocaleDateString();
+
+    async function loadPrescription() {
+      const email = localStorage.getItem("userEmail");
+      const userName = localStorage.getItem("userName");
+      const doctorName = localStorage.getItem("doctorName");
+
+      // Set names
+      document.getElementById("patient-name").textContent = userName || "Unknown";
+      document.getElementById("doctor-name").textContent = doctorName || "AI Doctor";
+
+      try {
+        if (!email) {
+          document.getElementById("prescription-content").textContent = "User not logged in.";
+          return;
+        }
+
+        const response = await fetch(`http://localhost:5001/prescriptions/${email}`);
+        const data = await response.json();
+
+        if (data.prescription) {
+          document.getElementById("prescription-content").textContent = data.prescription;
+        } else {
+          document.getElementById("prescription-content").textContent = "No prescription available.";
+        }
+
+      } catch (err) {
+        console.error("Error fetching prescription:", err);
+        document.getElementById("prescription-content").textContent = "Error loading prescription.";
+      }
+    }
+
+    function exportPDF() {
+      const doc = new jsPDF();
+      const date = document.getElementById("date").textContent;
+      const patient = document.getElementById("patient-name").textContent;
+      const doctor = document.getElementById("doctor-name").textContent;
+      const prescription = document.getElementById("prescription-content").textContent;
+
+      doc.setFontSize(18);
+      doc.text("🩺 Bewell Hospital", 10, 20);
+      doc.setFontSize(10);
+      doc.text("Old No.23/1-7, New No.46/1 & 46/1 A,", 10, 26);
+      doc.text("Near Collectorate Office, K P Road,", 10, 30);
+      doc.text("Ramavarmapuram-629001", 10, 34);
+
+      doc.setFontSize(12);
+      doc.text(date, 150, 20);
+      doc.text(`Patient Name: ${patient}`, 10, 50);
+      doc.text(`Doctor: ${doctor}`, 10, 58);
+
+      doc.setFontSize(14);
+      doc.text("Diagnosis & Prescription:", 10, 70);
+      doc.setFontSize(12);
+      doc.text(prescription, 10, 80);
+
+      doc.save(`Prescription-${patient}.pdf`);
+    }
+
+    window.onload = loadPrescription;
+  </script>
+</body>
+</html>
